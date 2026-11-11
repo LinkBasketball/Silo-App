@@ -116,6 +116,8 @@ def analyze(req: AnalyzeRequest, db: Session = Depends(get_db)):
                             data_status="user_submitted", claims=claims, analysis=analysis, publisher=None,
                             last_verified_at=now)
         inp = {"kind": kind, "title": title, "url": url, "char_count": len(text)}
+        if kind == "url":  # return the extracted text so the client can show the audited original
+            inp["text"] = text
     ms = int((time.perf_counter() - t0) * 1000)
     db.add(M.AnalysisRun(input_kind=inp["kind"], input_sha256=hashlib.sha256(text.encode()).hexdigest(),
                          engine=analysis["engine"], claim_count=len(analysis["claims"]),
