@@ -1,7 +1,7 @@
 """Environment-driven configuration. Every value can be overridden with a SILO_* env var."""
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 APP_VERSION = "0.1.0"
@@ -40,6 +40,15 @@ class Settings(BaseSettings):
     fec_api_base: str = "https://api.open.fec.gov/v1"
     external_timeout_s: float = 10.0
     external_max_retries: int = 2
+
+    @field_validator("database_url")
+    @classmethod
+    def _normalize_db_url(cls, v: str) -> str:
+        # Hosting providers (Render, Heroku) issue postgres:// URLs; SQLAlchemy needs a driver.
+        for prefix in ("postgres://", "postgresql://"):
+            if v.startswith(prefix):
+                return "postgresql+psycopg://" + v[len(prefix):]
+        return v
 
     @property
     def cors_origin_list(self) -> list[str]:

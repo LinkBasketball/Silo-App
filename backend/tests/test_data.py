@@ -108,3 +108,9 @@ def test_adapter_requires_configuration():
     with pytest.raises(AdapterError) as e:
         FECAdapter(None).search_candidates("x")
     assert e.value.code in ("live_disabled", "not_configured")
+
+
+def test_postgres_url_normalized():
+    from app.core.config import Settings
+    assert Settings(database_url="postgres://u:p@h/db").database_url == "postgresql+psycopg://u:p@h/db"
+    assert Settings(database_url="sqlite:///x.db").database_url == "sqlite:///x.db"

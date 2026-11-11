@@ -4,5 +4,5 @@ import '@testing-library/jest-dom/vitest'
 class RO { observe() {} unobserve() {} disconnect() {} }
 globalThis.ResizeObserver = globalThis.ResizeObserver || RO
 window.matchMedia = window.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }))
-window.scrollTo = window.scrollTo || (() => {})
+window.scrollTo = () => {}
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {})

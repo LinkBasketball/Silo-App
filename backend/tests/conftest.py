@@ -2,7 +2,7 @@ import os
 import tempfile
 
 _tmp = tempfile.mkdtemp(prefix="silo-test-")
-os.environ["SILO_DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
+os.environ.setdefault("SILO_DATABASE_URL", f"sqlite:///{_tmp}/test.db")
 os.environ["SILO_RATE_LIMIT_PER_MINUTE"] = "1000"
 os.environ["SILO_LIVE_DATA_ENABLED"] = "false"
 

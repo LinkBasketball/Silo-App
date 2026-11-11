@@ -1,0 +1,31 @@
+# Local full stack: PostgreSQL + FastAPI + nginx-served React build.
+#   docker compose up --build   →  http://localhost:8080
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: silo
+      POSTGRES_PASSWORD: silo-local-only
+      POSTGRES_DB: silo
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U silo"]
+      interval: 5s
+      retries: 10
+  backend:
+    build: ./backend
+    environment:
+      SILO_DATABASE_URL: postgresql+psycopg://silo:silo-local-only@db:5432/silo
+      SILO_CORS_ORIGINS: http://localhost:8080
+      SILO_LIVE_DATA_ENABLED: ${SILO_LIVE_DATA_ENABLED:-false}
+      SILO_FEC_API_KEY: ${SILO_FEC_API_KEY:-}
+      SILO_CONGRESS_API_KEY: ${SILO_CONGRESS_API_KEY:-}
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["8000:8000"]
+  frontend:
+    build: ./frontend
+    depends_on: [backend]
+    ports: ["8080:80"]
+volumes:
+  pgdata:
