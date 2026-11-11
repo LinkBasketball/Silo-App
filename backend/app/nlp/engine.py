@@ -57,7 +57,6 @@ class SpacyEngine:
 
     def __init__(self, model: str):
         import spacy  # imported lazily so the rules engine works without it
-
         from spacy.language import Language
 
         if not Language.has_factory("silo_label_boundaries"):
@@ -78,7 +77,7 @@ class SpacyEngine:
     def parse(self, text: str) -> ParsedDoc:
         doc = self._nlp(text)
         sents = []
-        for i, s in enumerate(doc.sents):
+        for _i, s in enumerate(doc.sents):
             if not s.text.strip():
                 continue
             sents.append(Sentence(
@@ -108,7 +107,7 @@ class RulesEngine:
     name = "rules-fallback"
 
     def parse(self, text: str) -> ParsedDoc:
-        from app.nlp.lexicons import EMOTIONAL_INDEX, FACT_VERBS, ATTRIBUTION_VERBS
+        from app.nlp.lexicons import ATTRIBUTION_VERBS, EMOTIONAL_INDEX, FACT_VERBS
 
         sents = []
         for m in _SENT_RE.finditer(text):

@@ -101,7 +101,9 @@ def classify_sentence(sent: Sentence, quotes_in_sentence: list[Quote] | None = N
     has_date = "DATE" in labels or bool(re.search(r"\b(19|20)\d{2}\b", sent.text))
     named = bool(labels & NAMED_LABELS) or any(t.pos == "PROPN" for t in sent.tokens[1:])
     words = {t.lower for t in sent.tokens}
-    fact_verbs = sorted(words & L.FACT_VERBS)
+    verbs = {t.lower for t in sent.tokens if t.pos in ("VERB", "AUX")}
+    # Only count action words used as verbs: "the tax cut" (noun) is not a reported action.
+    fact_verbs = sorted(verbs & L.FACT_VERBS)
     attributed = bool(words & L.ATTRIBUTION_VERBS) or "according to" in lower
     opinion = _phrases_in(lower, L.OPINION_MARKERS)
     normative = _phrases_in(lower, L.NORMATIVE_MARKERS)
@@ -224,7 +226,7 @@ def rhetoric_metrics(doc: ParsedDoc, classifications: list[dict]) -> dict:
     dist: Counter = Counter(c["sentence_class"] for c in classifications)
     total_s = max(1, len(classifications))
     examples: dict[str, list[str]] = {}
-    for s, c in zip(doc.sentences, classifications):
+    for s, c in zip(doc.sentences, classifications, strict=False):
         examples.setdefault(c["sentence_class"], [])
         if len(examples[c["sentence_class"]]) < 2:
             examples[c["sentence_class"]].append(s.text)
@@ -311,7 +313,8 @@ def context_gaps(sent: Sentence, cls: dict, quotes: list[Quote]) -> list[dict]:
     def add(kind, label, question, trigger):
         gaps.append({"type": kind, "label": label, "question": question, "trigger": trigger, "sentence_index": sent.index})
 
-    change = sorted(words & CHANGE_WORDS)
+    verbs = {t.lower for t in sent.tokens if t.pos in ("VERB", "AUX")}
+    change = sorted(verbs & CHANGE_WORDS)
     if change and not has_date:
         add("missing_time_period", "Missing time period", "Over what period did this change happen, and starting from when?", change[0])
     if words & {"doubled", "tripled", "halved"} and not re.search(r"\d", sent.text):
@@ -368,7 +371,7 @@ def _subject(sent: Sentence) -> str:
 def neutral_summary(doc: ParsedDoc, classifications: list[dict], quotes: list[Quote], voice: str = "text", max_items: int = 12) -> dict:
     who = {"speech": "The speaker", "opinion": "The author"}.get(voice, "The text")
     items = []
-    for s, c in list(zip(doc.sentences, classifications))[:max_items]:
+    for s, c in list(zip(doc.sentences, classifications, strict=False))[:max_items]:
         sq = [q for q in quotes if q.sentence_index == s.index]
         cleaned, removed = _clean_loaded(s)
         cleaned = cleaned.rstrip(".!") + "."
@@ -446,7 +449,7 @@ def analyze_text(doc: ParsedDoc, voice: str = "text") -> dict:
     quotes = find_quotes(doc)
     classifications = [classify_sentence(s, [q for q in quotes if q.sentence_index == s.index]) for s in doc.sentences]
     claims, gaps = [], []
-    for s, c in zip(doc.sentences, classifications):
+    for s, c in zip(doc.sentences, classifications, strict=False):
         topic, _ = topic_for_sentence(s)
         g = context_gaps(s, c, quotes)
         gaps.extend(g)
@@ -460,7 +463,7 @@ def analyze_text(doc: ParsedDoc, voice: str = "text") -> dict:
         "engine": doc.engine,
         "sentences": [
             {"index": s.index, "text": s.text, "start": s.start, "end": s.end, **c}
-            for s, c in zip(doc.sentences, classifications)
+            for s, c in zip(doc.sentences, classifications, strict=False)
         ],
         "claims": claims,
         "quotes": [{"text": q.text, "speaker": q.speaker, "start": q.start, "end": q.end, "sentence_index": q.sentence_index} for q in quotes],

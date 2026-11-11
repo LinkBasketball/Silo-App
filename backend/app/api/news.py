@@ -19,7 +19,11 @@ from app.schemas import AnalyzeRequest, AnalyzeResponse, ArticleDetail, ContextP
 from app.services import scoring
 from app.services.matching import match_claim
 from app.services.serializers import (
-    article_analysis, article_claims, article_context, build_context, evidence_item,
+    article_analysis,
+    article_claims,
+    article_context,
+    build_context,
+    evidence_item,
 )
 
 router = APIRouter(tags=["News Intelligence"])
